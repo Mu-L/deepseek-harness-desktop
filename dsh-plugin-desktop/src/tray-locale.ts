@@ -1,12 +1,14 @@
 /** Desktop-owned native tray copy for the locales shipped by DSH. */
 
 import type { DesktopLocale } from './runtime.ts'
+import { desktopRecoveryCopy } from './recovery-copy.ts'
 
 export type DesktopTrayLabelKey =
   | 'addProfile'
   | 'checkForUpdates'
   | 'checkingForUpdates'
   | 'downloadingUpdate'
+  | 'enterSafeMode'
   | 'exportDiagnostics'
   | 'exitSafeMode'
   | 'openDesktop'
@@ -26,6 +28,7 @@ const labels: Record<DesktopLocale, Record<DesktopTrayLabelKey, (value: string) 
     checkForUpdates: () => 'Check for Updates…',
     checkingForUpdates: () => 'Checking for Updates…',
     downloadingUpdate: version => `Downloading DSH Desktop ${version}…`,
+    enterSafeMode: () => 'Enter Safe Mode…',
     exportDiagnostics: () => 'Export Diagnostics…',
     exitSafeMode: () => 'Exit Safe Mode and Restart…',
     openDesktop: productName => `Open ${productName}`,
@@ -44,6 +47,7 @@ const labels: Record<DesktopLocale, Record<DesktopTrayLabelKey, (value: string) 
     checkForUpdates: () => '检查更新…',
     checkingForUpdates: () => '正在检查更新…',
     downloadingUpdate: version => `正在下载 DSH Desktop ${version}…`,
+    enterSafeMode: () => '进入安全模式…',
     exportDiagnostics: () => '导出诊断信息…',
     exitSafeMode: () => '退出安全模式并重启…',
     openDesktop: productName => `打开 ${productName}`,
@@ -149,7 +153,17 @@ export function desktopDiagnosticsPrivacyCopy(locale: DesktopLocale): DesktopDia
 /** Resolve the native confirmation shown before every ordinary relaunch request. */
 export function desktopRestartConfirmationCopy(
   locale: DesktopLocale,
-  target: 'normal' | 'recovery' = 'normal',
+  target: 'normal' | 'recovery' | 'safe-mode' = 'normal',
 ): DesktopRestartConfirmationCopy {
+  if (target === 'safe-mode') {
+    const copy = desktopRecoveryCopy(locale)
+    return {
+      title: copy.confirmSafeMode,
+      message: copy.confirmSafeModeMessage,
+      detail: copy.confirmSafeModeBody,
+      confirm: copy.confirmSafeModeAction,
+      cancel: copy.cancel,
+    }
+  }
   return restartConfirmationCopy[locale][target]
 }
