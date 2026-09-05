@@ -513,11 +513,17 @@ async function start(): Promise<void> {
       throw new Error('dsh-plugin-desktop: shutdown coordinator is not ready')
     }
     if (restartRequested) return
+    if (target === 'safe-mode') {
+      if (prepareSafeMode === undefined) throw new Error(`${BIN_NAME}: Safe Mode is unavailable`)
+      prepareSafeMode()
+    }
     restartRequested = true
     nativeExit.requestRelaunch(
-      target === 'recovery'
-        ? desktopRecoveryRelaunchArguments()
-        : desktopDefaultRelaunchArguments(),
+      target === 'safe-mode'
+        ? desktopSafeModeRelaunchArguments()
+        : target === 'recovery'
+          ? desktopRecoveryRelaunchArguments()
+          : desktopDefaultRelaunchArguments(),
     )
     await shutdown.request(0)
   }, (report) => {
@@ -789,6 +795,14 @@ async function start(): Promise<void> {
           nativeExit.requestRelaunch(desktopDefaultRelaunchArguments())
           await shutdown.request(0)
         },
+      })
+      generation.own(() => { safeModeTray.dispose() })
+    } else {
+      const safeModeTray = runtime.registerTrayItem({
+        group: 'tools',
+        order: 100,
+        label: () => desktopTrayLabel(runtime.locale, 'enterSafeMode'),
+        invoke: () => runtime.requestSafeModeRestart(),
       })
       generation.own(() => { safeModeTray.dispose() })
     }
