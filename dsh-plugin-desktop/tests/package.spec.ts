@@ -91,6 +91,8 @@ describe('published package surface', () => {
     expect(main).toContain('const profileUserDataDir = safeModePaths?.userDataDir ?? desktopUserDataDir')
     expect(main).toContain('const homeDir = safeModePaths?.homeDir ?? resolveDshHome()')
     expect(main).toContain('if (safeModePaths !== undefined) process.env.DSH_HOME = homeDir')
+    expect(main).toContain('const desktopLaunchEnvironment = withDesktopDshHome(environment, homeDir)')
+    expect(main).toContain('hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, desktopLaunchEnvironment)')
     expect(main).toContain('createDesktopWebProfile(paths.homeDir, DESKTOP_SAFE_MODE_PROFILE_NAME)')
     expect(main).toContain("join(paths.userDataDir, 'profile-selection', 'state.json')")
     expect(main).toContain('selectDesktopProfile(')
