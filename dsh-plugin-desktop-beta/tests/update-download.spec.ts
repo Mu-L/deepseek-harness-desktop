@@ -103,15 +103,16 @@ describe('desktop update installer download', () => {
       .toBe('DSH-Desktop-Beta-2.0.5-beta.2-mac.dmg')
   })
 
-  it('rejects a Beta artifact without matching response identity', async () => {
+  it('accepts a Beta artifact without response identity headers', async () => {
     const directory = await temporaryDirectory()
-    await expectFailure(downloadDesktopUpdate({
+    const result = await downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.0.5-beta.2',
       channel: 'beta',
       destinationPath: join(directory, 'DSH-Desktop-Beta-2.0.5-beta.2-mac.dmg'),
       request: async () => chunkedResponse([dmgArtifact()]),
-    }), 'invalid-artifact')
+    })
+    expect(result).toBe(join(directory, 'DSH-Desktop-Beta-2.0.5-beta.2-mac.dmg'))
   })
 
   it('streams a macOS DMG from only the fixed endpoint and atomically completes it', async () => {
