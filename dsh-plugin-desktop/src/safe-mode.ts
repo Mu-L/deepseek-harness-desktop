@@ -11,6 +11,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
+import { createDesktopWebProfile, selectDesktopProfile } from './profile-manager.ts'
 import type { DesktopMarketProvider } from './desktop-market.ts'
 import type { DesktopSetupWizardSettings } from './setup-wizard-settings.ts'
 
@@ -162,4 +163,20 @@ export function ensureDesktopSafeModeEnvironment(userDataDir: string): DesktopSa
     return paths
   }
   return resetDesktopSafeModeEnvironment(userDataDir)
+}
+
+export function prepareDesktopSafeModeEnvironment(userDataDir: string): DesktopSafeModePaths {
+  const paths = resetDesktopSafeModeEnvironment(userDataDir)
+  try {
+    createDesktopWebProfile(paths.homeDir, DESKTOP_SAFE_MODE_PROFILE_NAME)
+    selectDesktopProfile(
+      join(paths.userDataDir, 'profile-selection', 'state.json'),
+      paths.homeDir,
+      DESKTOP_SAFE_MODE_PROFILE_NAME,
+    )
+    return paths
+  } catch (cause) {
+    cleanupDesktopSafeModeEnvironment(userDataDir)
+    throw cause
+  }
 }
