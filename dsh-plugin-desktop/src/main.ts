@@ -14,10 +14,7 @@ import {
 } from '@deepseek-ai/dsh-app-boot'
 import { provideCmdline } from '@deepseek-ai/dsh-cmdline'
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import {
-  DSH_LAUNCH_ENVIRONMENT_KEY,
-  type LaunchEnvironmentSnapshot,
-} from '@deepseek-ai/dsh-launch-environment'
+import { DSH_LAUNCH_ENVIRONMENT_KEY } from '@deepseek-ai/dsh-launch-environment'
 import type {} from '@deepseek-ai/dsh-web-app'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import {
@@ -201,22 +198,6 @@ import { desktopRecoveryCopy } from './recovery-copy.ts'
 
 const BIN_NAME = DESKTOP_PACKAGE_NAME
 const PRODUCT_NAME = DESKTOP_PRODUCT_NAME
-
-/** Keep child launches on the selected Desktop DSH Home, including Safe Mode. */
-function withDesktopDshHome(
-  environment: LaunchEnvironmentSnapshot,
-  homeDir: string,
-): LaunchEnvironmentSnapshot {
-  const entry = Object.freeze({ value: homeDir, source: 'process' as const })
-  return Object.freeze({
-    get: (name: string) => name.toUpperCase() === 'DSH_HOME' ? entry : environment.get(name),
-    getFrom: (name: string, sources: Parameters<LaunchEnvironmentSnapshot['getFrom']>[1]) => {
-      return name.toUpperCase() === 'DSH_HOME' && sources.includes('process')
-        ? entry
-        : environment.getFrom(name, sources)
-    },
-  })
-}
 
 /** Require OS-backed secret storage; Linux's plaintext fallback is not sufficient for a CA key. */
 function desktopLanHttpsPrivateKeyProtector(): DesktopLanHttpsPrivateKeyProtector {
@@ -695,7 +676,6 @@ async function start(): Promise<void> {
     startupStage = 'runtime-bootstrap'
     lifecycleRecorder.transitionStartupStage(startupStage)
     const environment = loadLayeredEnv(BIN_NAME, process.cwd())
-    const desktopLaunchEnvironment = withDesktopDshHome(environment, homeDir)
     const electronVersion = process.versions.electron
     if (electronVersion === undefined) {
       throw new Error(`${BIN_NAME}: plugin runtime requires the Electron runtime version`)
@@ -1361,7 +1341,7 @@ async function start(): Promise<void> {
           () => releasePackageResolver,
           'dsh-plugin-desktop: profile package resolution',
         )
-        hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, desktopLaunchEnvironment)
+        hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, environment)
         hostCtx.provide('desktopBrowserAccess', browserAccess)
         hostCtx.provide('desktopLanHttps', lanHttps)
         hostCtx.provide('desktopRuntime', runtime)
