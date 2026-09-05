@@ -21,6 +21,7 @@ import {
   isDesktopBackgroundNodeRequest,
   isDesktopInstallerQuitRequest,
 } from './desktop-installer-quit.ts'
+import { withDesktopDshHome } from './launch-environment.ts'
 import { createDesktopBrowserAccess } from './desktop-browser-access.ts'
 import {
   installDesktopDshRuntime,
@@ -177,9 +178,8 @@ import {
 import {
   cleanupDesktopSafeModeEnvironment,
   DESKTOP_SAFE_MODE_DEFAULTS,
-  DESKTOP_SAFE_MODE_PROFILE_NAME,
   ensureDesktopSafeModeEnvironment,
-  resetDesktopSafeModeEnvironment,
+  prepareDesktopSafeModeEnvironment,
   desktopSafeModePaths,
   type DesktopSafeModePaths,
 } from './safe-mode.ts'
@@ -636,18 +636,7 @@ async function start(): Promise<void> {
     if (safeModePaths !== undefined) process.env.DSH_HOME = homeDir
     prepareSafeMode = safeModePaths === undefined
       ? () => {
-          const paths = resetDesktopSafeModeEnvironment(desktopUserDataDir)
-          try {
-            createDesktopWebProfile(paths.homeDir, DESKTOP_SAFE_MODE_PROFILE_NAME)
-            selectDesktopProfile(
-              join(paths.userDataDir, 'profile-selection', 'state.json'),
-              paths.homeDir,
-              DESKTOP_SAFE_MODE_PROFILE_NAME,
-            )
-          } catch (cause) {
-            cleanupDesktopSafeModeEnvironment(desktopUserDataDir)
-            throw cause
-          }
+          prepareDesktopSafeModeEnvironment(desktopUserDataDir)
         }
       : undefined
     const projectionCacheRecovery = recoverOversizedSessionProjectionCache(homeDir)
@@ -676,6 +665,7 @@ async function start(): Promise<void> {
     startupStage = 'runtime-bootstrap'
     lifecycleRecorder.transitionStartupStage(startupStage)
     const environment = loadLayeredEnv(BIN_NAME, process.cwd())
+    const desktopLaunchEnvironment = withDesktopDshHome(environment, homeDir)
     const electronVersion = process.versions.electron
     if (electronVersion === undefined) {
       throw new Error(`${BIN_NAME}: plugin runtime requires the Electron runtime version`)
@@ -1341,7 +1331,7 @@ async function start(): Promise<void> {
           () => releasePackageResolver,
           'dsh-plugin-desktop: profile package resolution',
         )
-        hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, environment)
+        hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, desktopLaunchEnvironment)
         hostCtx.provide('desktopBrowserAccess', browserAccess)
         hostCtx.provide('desktopLanHttps', lanHttps)
         hostCtx.provide('desktopRuntime', runtime)
