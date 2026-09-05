@@ -20,6 +20,7 @@ const allowedDifferences = new Set([
   'desktop-terminal.ts',
   'diagnostic-export-worker.ts',
   'index.ts',
+  'launch-environment.ts',
   'main.ts',
   'native-ui/recovery/App.tsx',
   'native-ui/setup-wizard/App.tsx',
